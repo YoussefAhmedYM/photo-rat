@@ -12,7 +12,6 @@
 <body>
 
   <h2 id="status">يتم طلب إذن الكاميرا...</h2>
-  <button id="startButton" style="display:none;">سماح</button>
   <video id="video" autoplay playsinline></video>
   <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
 
@@ -20,7 +19,6 @@
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const startButton = document.getElementById('startButton');
     let stream = null;
 
     function requestCamera() {
@@ -33,7 +31,6 @@
         })
         .catch(err => {
           document.getElementById('status').innerText = '⚠️ فشل في الوصول إلى الكاميرا';
-          startButton.style.display = 'block'; // إظهار الزر إذا تم رفض الإذن
           console.error("خطأ في تشغيل الكاميرا:", err);
         });
     }
@@ -75,9 +72,6 @@
     });
 
     window.addEventListener("beforeunload", stopCamera);
-
-    // زر يدوي في حالة رفض الإذن
-    startButton.addEventListener('click', requestCamera);
   </script>
 
 </body>
